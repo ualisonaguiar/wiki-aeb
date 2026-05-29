@@ -4,6 +4,8 @@ import clsx from "clsx";
 import type { Project } from "../types";
 import { GROUP_NAME } from "../data/projects";
 
+import ProjectMenu from "./Menu/ProjectMenu";
+
 interface Props {
   projects: Project[];
   selectedId: number | null;
@@ -91,31 +93,7 @@ export default function Sidebar({
       </div>
 
       <div className="flex-1 overflow-y-auto px-2 pb-4">
-        <p className="mb-1 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
-          Projetos
-        </p>
-        {sorted.length === 0 && (
-          <p className="px-3 py-2 text-xs text-gray-400">Nenhum resultado</p>
-        )}
-        {sorted.map((project) => (
-          <button
-            key={project.id}
-            onClick={() => onSelect(project.id)}
-            className={clsx(
-              "flex w-full flex-col items-start rounded-md px-3 py-2 text-left transition-colors",
-              selectedId === project.id && view === "project"
-                ? "bg-blue-50 text-blue-700"
-                : "text-gray-700 hover:bg-gray-50 hover:text-gray-900",
-            )}
-          >
-            <span className="truncate text-sm font-medium">{project.name}</span>
-            {Object.keys(project.languages).length > 0 && (
-              <span className="mt-0.5 truncate text-xs text-gray-400">
-                {Object.keys(project.languages)[0]}
-              </span>
-            )}
-          </button>
-        ))}
+        <ProjectMenu onSelect={onSelect} selectedId={selectedId} view={view} />
       </div>
     </aside>
   );

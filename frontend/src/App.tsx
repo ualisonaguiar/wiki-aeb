@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Sidebar from "./components/Sidebar";
 import Dashboard from "./components/Dashboard";
-import ProjectDetail from "./components/ProjectDetail";
+import ProjectDetail from "./components/Projeto/ProjectDetail";
 import MembersPanel from "./components/MembersPanel";
 import { PROJECTS, MEMBERS } from "./data/projects";
 

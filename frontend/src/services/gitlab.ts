@@ -2,8 +2,8 @@ const GITLAB_TOKEN = import.meta.env.VITE_GITLAB_TOKEN as string;
 // In dev, route through Vite proxy (/gitlab-proxy) to avoid CORS.
 // In prod, call the backend API proxy so the token never leaves the server.
 const GRAPHQL_ENDPOINT = import.meta.env.DEV
-  ? '/gitlab-proxy/api/graphql'
-  : '/api/gitlab/graphql';
+  ? "/gitlab-proxy/api/graphql"
+  : "/api/gitlab/graphql";
 
 export interface CommitInfo {
   id: string;
@@ -17,7 +17,7 @@ export interface CommitInfo {
 export interface MergeRequest {
   iid: string;
   title: string;
-  state: 'opened' | 'closed' | 'locked' | 'merged';
+  state: "opened" | "closed" | "locked" | "merged";
   createdAt: string;
   mergedAt: string | null;
   sourceBranch: string;
@@ -42,12 +42,16 @@ export interface ProjectGQLData {
   mergeRequests: MergeRequest[];
 }
 
-async function gql(queryName: string, query: string, variables: Record<string, unknown> = {}): Promise<unknown> {
+async function gql(
+  queryName: string,
+  query: string,
+  variables: Record<string, unknown> = {},
+): Promise<unknown> {
   const res = await fetch(GRAPHQL_ENDPOINT, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      'PRIVATE-TOKEN': GITLAB_TOKEN,
+      "Content-Type": "application/json",
+      "PRIVATE-TOKEN": GITLAB_TOKEN,
     },
     body: JSON.stringify({ query, variables }),
   });
@@ -58,10 +62,15 @@ async function gql(queryName: string, query: string, variables: Record<string, u
     throw new Error(msg);
   }
 
-  const json = (await res.json()) as { data?: unknown; errors?: { message: string; path?: string[] }[] };
+  const json = (await res.json()) as {
+    data?: unknown;
+    errors?: { message: string; path?: string[] }[];
+  };
 
   if (json.errors?.length) {
-    const msg = json.errors.map((e) => `${e.path?.join('.') ?? '?'}: ${e.message}`).join(' | ');
+    const msg = json.errors
+      .map((e) => `${e.path?.join(".") ?? "?"}: ${e.message}`)
+      .join(" | ");
     console.warn(`[${queryName}] GraphQL errors:`, msg);
     throw new Error(msg);
   }
@@ -123,7 +132,9 @@ const README_QUERY = `
   }
 `;
 
-export async function fetchProjectData(fullPath: string): Promise<ProjectGQLData> {
+export async function fetchProjectData(
+  fullPath: string,
+): Promise<ProjectGQLData> {
   const result: ProjectGQLData = {
     branches: [],
     defaultBranch: null,
@@ -134,7 +145,7 @@ export async function fetchProjectData(fullPath: string): Promise<ProjectGQLData
   };
 
   await Promise.allSettled([
-    gql('Pipelines', PIPELINES_QUERY, { fullPath }).then((data) => {
+    gql("Pipelines", PIPELINES_QUERY, { fullPath }).then((data) => {
       const nodes = (
         data as { project: { pipelines: { nodes: PipelineInfo[] } } }
       ).project?.pipelines?.nodes;
@@ -151,25 +162,31 @@ export async function fetchProjectData(fullPath: string): Promise<ProjectGQLData
           result.lastCommit = {
             id: latest.sha,
             title: `Pipeline em ${latest.ref}`,
-            message: '',
-            authorName: '',
+            message: "",
+            authorName: "",
             committedDate: latest.createdAt,
-            webUrl: '',
+            webUrl: "",
           };
         }
       }
     }),
 
-    gql('MergeRequests', MR_QUERY, { fullPath }).then((data) => {
+    gql("MergeRequests", MR_QUERY, { fullPath }).then((data) => {
       const nodes = (
         data as { project: { mergeRequests: { nodes: MergeRequest[] } } }
       ).project?.mergeRequests?.nodes;
       if (nodes) result.mergeRequests = nodes;
     }),
 
-    gql('Readme', README_QUERY, { fullPath }).then((data) => {
+    gql("Readme", README_QUERY, { fullPath }).then((data) => {
       const nodes = (
-        data as { project: { repository: { blobs: { nodes: { rawBlob: string; path: string }[] } } } }
+        data as {
+          project: {
+            repository: {
+              blobs: { nodes: { rawBlob: string; path: string }[] };
+            };
+          };
+        }
       ).project?.repository?.blobs?.nodes;
       if (nodes?.length) result.readme = nodes[0].rawBlob ?? null;
     }),

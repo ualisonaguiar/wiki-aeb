@@ -19,11 +19,11 @@ import {
   HardDrive,
   Wifi,
 } from "lucide-react";
-import type { InfraVM } from "../hooks/useInfra";
+import type { InfraVM } from "../../hooks/useInfra";
 import clsx from "clsx";
-import type { Project } from "../types";
-import { formatDate, formatDateRelative, getLangColor } from "../utils";
-import LanguageBar from "./LanguageBar";
+import type { Project } from "../../types";
+import { formatDate, formatDateRelative, getLangColor } from "../../utils";
+import LanguageBar from "../LanguageBar";
 import {
   RadarChart,
   PolarGrid,
@@ -32,8 +32,11 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
-import { useProjectGraphQL } from "../hooks/useProjectGraphQL";
-import { useInfra } from "../hooks/useInfra";
+import { useProjectGraphQL } from "../../hooks/useProjectGraphQL";
+import { useInfra } from "../../hooks/useInfra";
+import ProjectDetailHeader from "./ProjectDetailHeader";
+import ProjectDetailMetaCards from "./ProjectDetailMetaCards";
+import.meta.env.VITE_GITLAB_URL;
 
 interface Props {
   project: Project;
@@ -78,52 +81,10 @@ export default function ProjectDetail({ project }: Props) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{project.name}</h1>
-          {project.description && (
-            <p className="mt-1 text-sm text-gray-500">{project.description}</p>
-          )}
-          {data?.defaultBranch && (
-            <span className="mt-1 inline-flex items-center gap-1 text-xs text-gray-400">
-              <GitBranch size={11} /> {data.defaultBranch}
-            </span>
-          )}
-        </div>
-        <a
-          href={project.web_url}
-          target="_blank"
-          rel="noreferrer"
-          className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-blue-600"
-        >
-          <ExternalLink size={14} />
-          Abrir no GitLab
-        </a>
-      </div>
+      <ProjectDetailHeader project={project} data={data} />
 
       {/* Meta cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <MetaCard
-          icon={<Calendar size={15} className="text-blue-500" />}
-          label="Criado em"
-          value={formatDate(project.created_at)}
-        />
-        <MetaCard
-          icon={<Clock size={15} className="text-green-500" />}
-          label="Última atividade"
-          value={formatDateRelative(project.last_activity_at)}
-        />
-        <MetaCard
-          icon={<GitBranch size={15} className="text-purple-500" />}
-          label="Branches"
-          value={loading ? "…" : String(data?.branches.length ?? "—")}
-        />
-        <MetaCard
-          icon={<GitMerge size={15} className="text-orange-500" />}
-          label="Merge Requests"
-          value={loading ? "…" : String(data?.mergeRequests.length ?? "—")}
-        />
-      </div>
+      <ProjectDetailMetaCards project={project} data={data} loading={loading} />
 
       {/* GraphQL status */}
       {loading && (
@@ -596,26 +557,6 @@ function VMStat({
         <span className="text-[10px]">{label}</span>
       </div>
       <p className="mt-0.5 text-xs font-semibold text-gray-800">{value}</p>
-    </div>
-  );
-}
-
-function MetaCard({
-  icon,
-  label,
-  value,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4">
-      <div className="flex items-center gap-1.5 text-xs text-gray-500">
-        {icon}
-        {label}
-      </div>
-      <p className="mt-1 text-sm font-semibold text-gray-900">{value}</p>
     </div>
   );
 }
