@@ -20,11 +20,19 @@ import ProjectMenu from "./Menu/ProjectMenu";
 interface Props {
   projects: Project[];
   selectedId: number | null;
-  view: "dashboard" | "members" | "project" | "infra" | "admin" | "aplicacao";
+  view:
+    | "dashboard"
+    | "members"
+    | "project"
+    | "infra"
+    | "inventario"
+    | "admin"
+    | "aplicacao";
   onSelect: (id: number) => void;
   onDashboard: () => void;
   onMembers: () => void;
   onInfra: () => void;
+  onInventario: () => void;
   onAplicacao: () => void;
 }
 
@@ -35,6 +43,7 @@ export default function Sidebar({
   onSelect,
   onDashboard,
   onInfra,
+  onInventario,
   onAplicacao,
 }: Props) {
   const navigate = useNavigate();

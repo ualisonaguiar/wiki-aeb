@@ -6,6 +6,7 @@ import docsRouter from "./docs.js";
 import healthRouter from "./health.js";
 import gitlabRouter from "../modules/gitlab/gitlab.routes.js";
 import infraRouter from "../modules/infra/infra.routes.js";
+import inventarioVmRouter from "../modules/infra/inventario.vm.routes.js";
 import nutanixRouter from "../modules/nutanix/nutanix.routes.js";
 import prometheusRouter from "../modules/prometheus/prometheus.routes.js";
 import projetobRouter from "../modules/projeto/projeto.routes.js";
@@ -34,6 +35,7 @@ router.use("/health", healthRouter);
 router.use("/gitlab", gitlabRouter);
 router.use("/projetos", projetobRouter);
 router.use("/infra", infraRouter);
+router.use("/inventario-vm", inventarioVmRouter);
 router.use("/nutanix", nutanixRouter);
 router.use("/prometheus", prometheusRouter);
 

@@ -1,7 +1,18 @@
-import { Activity, AlertTriangle, Database, Search, Server, Users } from "lucide-react";
+import {
+  Activity,
+  AlertTriangle,
+  Database,
+  Search,
+  Server,
+  Users,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import StatCard from "../../utils/StatCard";
-import { infraService, type InfraAplicacao } from "../../services/infra.service";
+import {
+  infraService,
+  type InfraAplicacao,
+} from "../../services/infra.service";
+import InventarioVmPanel from "./InventarioVmPanel";
 
 function getPrimaryResponsavel(aplicacao: InfraAplicacao) {
   return aplicacao.unidades[0]?.responsavel ?? "Sem responsavel";
@@ -87,8 +98,12 @@ export default function InfrastructurePanel() {
   const totalAtivos = aplicacoes.filter((aplicacao) =>
     isActiveStatus(aplicacao.statusDescricao),
   ).length;
-  const semHosts = aplicacoes.filter((aplicacao) => aplicacao.hosts.length === 0).length;
-  const semUnidade = aplicacoes.filter((aplicacao) => aplicacao.unidades.length === 0).length;
+  const semHosts = aplicacoes.filter(
+    (aplicacao) => aplicacao.hosts.length === 0,
+  ).length;
+  const semUnidade = aplicacoes.filter(
+    (aplicacao) => aplicacao.unidades.length === 0,
+  ).length;
 
   return (
     <div className="space-y-6">
@@ -149,7 +164,9 @@ export default function InfrastructurePanel() {
         <div className="border-b border-gray-200 px-4 py-3">
           <h2 className="text-sm font-semibold text-gray-900">Aplicacoes</h2>
           <p className="text-xs text-gray-500">
-            {loading ? "Carregando dados..." : `${filtered.length} registro(s) encontrado(s)`}
+            {loading
+              ? "Carregando dados..."
+              : `${filtered.length} registro(s) encontrado(s)`}
           </p>
         </div>
 
@@ -180,7 +197,10 @@ export default function InfrastructurePanel() {
             <tbody className="divide-y divide-gray-100 bg-white">
               {loading && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500">
+                  <td
+                    colSpan={6}
+                    className="px-4 py-8 text-center text-sm text-gray-500"
+                  >
                     Carregando infraestrutura...
                   </td>
                 </tr>
@@ -188,7 +208,10 @@ export default function InfrastructurePanel() {
 
               {!loading && filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500">
+                  <td
+                    colSpan={6}
+                    className="px-4 py-8 text-center text-sm text-gray-500"
+                  >
                     Nenhuma aplicacao encontrada.
                   </td>
                 </tr>
@@ -198,8 +221,12 @@ export default function InfrastructurePanel() {
                 filtered.map((aplicacao) => (
                   <tr key={aplicacao.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900">{aplicacao.nome}</div>
-                      <div className="text-xs text-gray-500">{aplicacao.sigla ?? "Sem sigla"}</div>
+                      <div className="font-medium text-gray-900">
+                        {aplicacao.nome}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {aplicacao.sigla ?? "Sem sigla"}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <StatusBadge status={aplicacao.statusDescricao} />
@@ -208,16 +235,24 @@ export default function InfrastructurePanel() {
                       {aplicacao.tecnologia ?? "Nao informada"}
                     </td>
                     <td className="px-4 py-3 text-gray-700">
-                      {aplicacao.hosts.length ? aplicacao.hosts.map((host) => host.vhost).join(", ") : "Sem vhost"}
+                      {aplicacao.hosts.length
+                        ? aplicacao.hosts.map((host) => host.vhost).join(", ")
+                        : "Sem vhost"}
                     </td>
-                    <td className="px-4 py-3 text-gray-700">{getUnidadesLabel(aplicacao)}</td>
-                    <td className="px-4 py-3 text-gray-700">{getPrimaryResponsavel(aplicacao)}</td>
+                    <td className="px-4 py-3 text-gray-700">
+                      {getUnidadesLabel(aplicacao)}
+                    </td>
+                    <td className="px-4 py-3 text-gray-700">
+                      {getPrimaryResponsavel(aplicacao)}
+                    </td>
                   </tr>
                 ))}
             </tbody>
           </table>
         </div>
       </section>
+
+      <InventarioVmPanel />
     </div>
   );
 }

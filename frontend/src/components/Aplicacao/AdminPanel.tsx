@@ -1,6 +1,8 @@
 import {
   AlertTriangle,
   CheckCircle2,
+  Eye,
+  Pencil,
   Plus,
   Shield,
   Trash2,
@@ -13,7 +15,11 @@ import {
   type AdminUnidade,
   type CreateAdminAplicacaoInput,
 } from "../../services/aplicacao.service";
-import type { InfraAplicacao } from "../../services/infra.service";
+import {
+  infraService,
+  type InfraAplicacao,
+  type InventarioVm,
+} from "../../services/infra.service";
 
 interface HostDraft {
   id: number;
@@ -61,6 +67,17 @@ export default function AdminPanel() {
   const [unidadeDrafts, setUnidadeDrafts] = useState<UnidadeDraft[]>([
     emptyUnidade(),
   ]);
+  const [editingAplicacaoId, setEditingAplicacaoId] = useState<number | null>(
+    null,
+  );
+  const [selectedAplicacaoId, setSelectedAplicacaoId] = useState<number | null>(
+    null,
+  );
+  const [editingAplicacao, setEditingAplicacao] =
+    useState<InfraAplicacao | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [vhostIps, setVhostIps] = useState<Record<string, string>>({});
+  const [hostStatuses, setHostStatuses] = useState<Record<string, string>>({});
 
   function loadData() {
     setLoading(true);
@@ -70,13 +87,40 @@ export default function AdminPanel() {
       aplicacaoService.getAplicacoes(),
       aplicacaoService.getStatus(),
       aplicacaoService.getUnidades(),
+      infraService.getVhostInformacoes(),
+      infraService.getInventarioVms(),
     ])
-      .then(([aplicacoesData, statusData, unidadesData]) => {
-        setAplicacoes(aplicacoesData);
-        setStatusOptions(statusData);
-        setUnidades(unidadesData);
-        if (!idStatus && statusData[0]) setIdStatus(String(statusData[0].id));
-      })
+      .then(
+        ([
+          aplicacoesData,
+          statusData,
+          unidadesData,
+          vhostData,
+          inventarioData,
+        ]) => {
+          setAplicacoes(aplicacoesData);
+          setStatusOptions(statusData);
+          setUnidades(unidadesData);
+          setVhostIps(
+            Object.fromEntries(
+              vhostData
+                .filter((item) => item.vhost)
+                .map((item) => [item.vhost, item.ipv4 ?? "Sem IP"]),
+            ),
+          );
+          setHostStatuses(
+            Object.fromEntries(
+              inventarioData
+                .filter((item: InventarioVm) => item.vm)
+                .map((item: InventarioVm) => [
+                  item.vm,
+                  item.status ?? "Sem status",
+                ]),
+            ),
+          );
+          if (!idStatus && statusData[0]) setIdStatus(String(statusData[0].id));
+        },
+      )
       .catch((err: unknown) => setError(String(err)))
       .finally(() => setLoading(false));
   }
@@ -90,6 +134,13 @@ export default function AdminPanel() {
     [aplicacoes],
   );
 
+  const selectedAplicacao = useMemo(
+    () =>
+      aplicacoes.find((aplicacao) => aplicacao.id === selectedAplicacaoId) ??
+      null,
+    [aplicacoes, selectedAplicacaoId],
+  );
+
   function resetForm() {
     setNome("");
     setSigla("");
@@ -98,6 +149,58 @@ export default function AdminPanel() {
     setDescricao("");
     setHosts([emptyHost()]);
     setUnidadeDrafts([emptyUnidade()]);
+    setEditingAplicacaoId(null);
+    setEditingAplicacao(null);
+  }
+
+  function populateFormFromAplicacao(aplicacao: InfraAplicacao) {
+    setNome(aplicacao.nome);
+    setSigla(aplicacao.sigla ?? "");
+    setIdStatus(String(aplicacao.idStatus));
+    setTecnologia(aplicacao.tecnologia ?? "");
+    setUrlVersionamento(aplicacao.urlVersionamento ?? "");
+    setDescricao(aplicacao.descricao ?? "");
+    setHosts(
+      aplicacao.hosts.length
+        ? aplicacao.hosts.map((host) => ({ id: host.id, vhost: host.vhost }))
+        : [emptyHost()],
+    );
+    setUnidadeDrafts(
+      aplicacao.unidades.length
+        ? aplicacao.unidades.map((unidade) => ({
+            id: unidade.id,
+            idUnidade: String(unidade.idUnidade),
+            responsavel: unidade.responsavel,
+          }))
+        : [emptyUnidade()],
+    );
+    setEditingAplicacaoId(aplicacao.id);
+    setEditingAplicacao(aplicacao);
+    setSelectedAplicacaoId(aplicacao.id);
+  }
+
+  async function handleViewHosts(aplicacao: InfraAplicacao) {
+    setSelectedAplicacaoId(aplicacao.id);
+    setIsViewModalOpen(true);
+  }
+
+  async function handleDeleteAplicacao(aplicacao: InfraAplicacao) {
+    if (!window.confirm(`Excluir a aplicação ${aplicacao.nome}?`)) return;
+
+    setError(null);
+    setSuccess(null);
+
+    try {
+      await aplicacaoService.deleteAplicacao(aplicacao.id);
+      setAplicacoes((current) =>
+        current.filter((item) => item.id !== aplicacao.id),
+      );
+      if (selectedAplicacaoId === aplicacao.id) setSelectedAplicacaoId(null);
+      if (editingAplicacaoId === aplicacao.id) resetForm();
+      setSuccess("Aplicação excluída com sucesso.");
+    } catch (err) {
+      setError(String(err));
+    }
   }
 
   async function handleSubmit(event: FormEvent) {
@@ -125,9 +228,49 @@ export default function AdminPanel() {
     };
 
     try {
-      const created = await aplicacaoService.createAplicacao(payload);
-      setAplicacoes((current) => [...current, created]);
-      setSuccess("Aplicação cadastrada com sucesso.");
+      if (editingAplicacaoId && editingAplicacao) {
+        const updated = await aplicacaoService.updateAplicacao(
+          editingAplicacao.id,
+          {
+            ...payload,
+            hosts: undefined,
+            unidades: undefined,
+          },
+        );
+
+        const currentHosts = editingAplicacao.hosts.map((host) => host.vhost);
+        const nextHosts = hosts
+          .map((host) => host.vhost.trim())
+          .filter(Boolean);
+
+        const hostsToRemove = editingAplicacao.hosts.filter(
+          (host) => !nextHosts.includes(host.vhost),
+        );
+        const hostsToAdd = nextHosts.filter(
+          (host) => !currentHosts.includes(host),
+        );
+
+        await Promise.all(
+          hostsToRemove.map((host) =>
+            aplicacaoService.removeHost(editingAplicacao.id, host.id),
+          ),
+        );
+        await Promise.all(
+          hostsToAdd.map((host) =>
+            aplicacaoService.addHost(editingAplicacao.id, { vhost: host }),
+          ),
+        );
+
+        const refreshed = await aplicacaoService.getAplicacoes();
+        setAplicacoes(refreshed);
+        setSuccess("Aplicação atualizada com sucesso.");
+        setSelectedAplicacaoId(updated.id);
+      } else {
+        const created = await aplicacaoService.createAplicacao(payload);
+        setAplicacoes((current) => [...current, created]);
+        setSuccess("Aplicação cadastrada com sucesso.");
+      }
+
       resetForm();
     } catch (err) {
       setError(String(err));
@@ -372,7 +515,11 @@ export default function AdminPanel() {
             disabled={saving || loading}
             className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
           >
-            {saving ? "Salvando..." : "Cadastrar aplicação"}
+            {saving
+              ? "Salvando..."
+              : editingAplicacaoId
+                ? "Salvar alterações"
+                : "Cadastrar aplicação"}
           </button>
         </div>
       </form>
@@ -393,7 +540,7 @@ export default function AdminPanel() {
           {sortedAplicacoes.map((aplicacao) => (
             <div
               key={aplicacao.id}
-              className="grid gap-3 px-4 py-3 text-sm md:grid-cols-[1fr_auto_auto]"
+              className="grid gap-3 px-4 py-3 text-sm md:grid-cols-[1fr_auto_auto_auto_auto]"
             >
               <div>
                 <p className="font-semibold text-gray-900">{aplicacao.nome}</p>
@@ -405,10 +552,88 @@ export default function AdminPanel() {
               <div className="text-gray-600">
                 {aplicacao.hosts.length} vhost(s)
               </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleViewHosts(aplicacao)}
+                  className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  <Eye size={13} />
+                  Visualizar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => populateFormFromAplicacao(aplicacao)}
+                  className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  <Pencil size={13} />
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteAplicacao(aplicacao)}
+                  className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
+                >
+                  <Trash2 size={13} />
+                  Excluir
+                </button>
+              </div>
             </div>
           ))}
         </div>
       </section>
+
+      {isViewModalOpen && selectedAplicacao && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-lg rounded-lg border border-gray-200 bg-white p-6 shadow-xl">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Hosts vinculados
+                </h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  {selectedAplicacao.nome}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsViewModalOpen(false);
+                  setSelectedAplicacaoId(null);
+                }}
+                className="rounded-md border border-gray-200 px-2 py-1 text-sm text-gray-600 hover:bg-gray-50"
+              >
+                Fechar
+              </button>
+            </div>
+
+            <div className="mt-5">
+              {selectedAplicacao.hosts.length ? (
+                <ul className="space-y-2">
+                  {selectedAplicacao.hosts.map((host) => (
+                    <li
+                      key={host.id}
+                      className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="font-medium text-gray-900">
+                          {host.vhost}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          IP: {vhostIps[host.vhost] ?? "Sem IP"} (
+                          {hostStatuses[host.vhost] ?? "Sem status"})
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-gray-500">Nenhum host vinculado.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

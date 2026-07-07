@@ -10,6 +10,7 @@ import Sidebar from "./components/Sidebar";
 import Dashboard from "./components/Dashboard";
 import ProjectDetail from "./components/Projeto/ProjectDetail";
 import InfrastructurePanel from "./components/Infra/InfrastructurePanel";
+import InventarioVmPanel from "./components/Infra/InventarioVmPanel";
 import AdminPanel from "./components/Aplicacao/AdminPanel";
 import { PROJECTS } from "./data/projects";
 import { projetoService } from "./services/projeto.service";
@@ -21,6 +22,7 @@ type View =
   | "members"
   | "project"
   | "infra"
+  | "inventario"
   | "admin"
   | "aplicacao";
 
@@ -59,6 +61,11 @@ function AppLayout() {
     setSelectedId(null);
   }
 
+  function handleInventario() {
+    navigate("/inventario");
+    setSelectedId(null);
+  }
+
   function handleAplicacao() {
     navigate("/aplicacao");
     setSelectedId(null);
@@ -66,6 +73,7 @@ function AppLayout() {
 
   const view = useMemo<View>(() => {
     if (location.pathname === "/infra") return "infra";
+    if (location.pathname === "/inventario") return "inventario";
     if (location.pathname === "/admin") return "admin";
     if (location.pathname === "/aplicacao") return "aplicacao";
     if (location.pathname.startsWith("/projects/")) return "project";
@@ -77,6 +85,7 @@ function AppLayout() {
 
   const renderContent = () => {
     if (location.pathname === "/infra") return <InfrastructurePanel />;
+    if (location.pathname === "/inventario") return <InventarioVmPanel />;
     if (location.pathname === "/admin") return <AdminPanel />;
     if (location.pathname === "/aplicacao") return <AdminPanel />;
     if (location.pathname.startsWith("/projects/")) {
@@ -102,6 +111,7 @@ function AppLayout() {
         onDashboard={handleDashboard}
         onMembers={() => {}}
         onInfra={handleInfra}
+        onInventario={handleInventario}
         onAplicacao={handleAplicacao}
       />
       <main className="flex-1 overflow-y-auto">
@@ -133,6 +143,7 @@ export default function App() {
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/dashboard" element={<AppLayout />} />
       <Route path="/infra" element={<AppLayout />} />
+      <Route path="/inventario" element={<AppLayout />} />
       <Route path="/projects/:id" element={<AppLayout />} />
 
       <Route

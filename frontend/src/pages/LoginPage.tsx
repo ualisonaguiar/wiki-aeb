@@ -2,7 +2,7 @@ import { AlertCircle, Eye, EyeOff, Lock, User } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logoAeb from "../assets/logoaeb.png";
-import loginImage from "../assets/SGDC.jpg";
+import loginImage from "../assets/amazonia_01.jpg";
 import { useAuth } from "../contexts/AuthContext";
 
 export function LoginPage() {

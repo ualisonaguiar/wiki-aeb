@@ -75,6 +75,35 @@ class AplicacaoService {
       body: JSON.stringify(input),
     });
   }
+
+  updateAplicacao(id: number, input: CreateAdminAplicacaoInput) {
+    return this.request<InfraAplicacao>(`/admin/aplicacoes/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(input),
+    });
+  }
+
+  deleteAplicacao(id: number) {
+    return this.request<void>(`/admin/aplicacoes/${id}`, {
+      method: "DELETE",
+    });
+  }
+
+  addHost(id: number, input: { vhost: string }) {
+    return this.request<{ id: number; idAplicacao: number; vhost: string }>(
+      `/admin/aplicacoes/${id}/hosts`,
+      {
+        method: "POST",
+        body: JSON.stringify(input),
+      },
+    );
+  }
+
+  removeHost(id: number, hostId: number) {
+    return this.request<void>(`/admin/aplicacoes/${id}/hosts/${hostId}`, {
+      method: "DELETE",
+    });
+  }
 }
 
 export const aplicacaoService = new AplicacaoService(

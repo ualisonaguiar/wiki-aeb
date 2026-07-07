@@ -34,6 +34,33 @@ export interface InfraVhostInfo {
   urlVersionamento: string | null;
 }
 
+export interface InventarioVm {
+  id: number;
+  vm: string;
+  status: string | null;
+  hospedeiro: string | null;
+  nuvem: string | null;
+  descricao: string | null;
+  ipv4: string | null;
+  ipv6: string | null;
+  logicalNetwork: string | null;
+  so: string | null;
+  vcpu: number | null;
+  memoriaGb: number | null;
+  discoGb: number | null;
+  tag: string | null;
+  caminho: string | null;
+  geracao: string | null;
+  aplicacoes?: InfraAplicacaoRelacionada[];
+}
+
+export interface InfraAplicacaoRelacionada {
+  id: number;
+  nome: string;
+  sigla: string | null;
+  vhost: string;
+}
+
 class InfraService {
   private baseUrl: string;
 
@@ -41,18 +68,41 @@ class InfraService {
     this.baseUrl = baseUrl;
   }
 
-  private async request<T>(endpoint: string): Promise<T> {
+  private async request<T>(endpoint: string, init?: RequestInit): Promise<T> {
     const res = await fetch(`${this.baseUrl}${endpoint}`, {
       headers: {
         "Content-Type": "application/json",
       },
+      ...init,
     });
 
-    if (!res.ok) {
-      throw new Error(`Infra API error: ${res.status}`);
+    let payload: unknown = null;
+    const contentType = res.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      try {
+        payload = await res.json();
+      } catch {
+        payload = null;
+      }
     }
 
-    return res.json() as Promise<T>;
+    if (!res.ok) {
+      const message =
+        (payload as { error?: string; message?: string } | null)?.error ||
+        (payload as { error?: string; message?: string } | null)?.message ||
+        `Infra API error: ${res.status}`;
+      throw new Error(message);
+    }
+
+    if (res.status === 204) {
+      return undefined as T;
+    }
+
+    if (payload === null) {
+      return [] as T;
+    }
+
+    return payload as T;
   }
 
   getAplicacoes() {
@@ -61,6 +111,40 @@ class InfraService {
 
   getVhostInformacoes() {
     return this.request<InfraVhostInfo[]>("/infra/vhosts");
+  }
+
+  getInventarioVms() {
+    return this.request<InventarioVm[]>("/inventario-vm");
+  }
+
+  getInventarioVm(id: number) {
+    return this.request<InventarioVm>(`/inventario-vm/${id}`);
+  }
+
+  createInventarioVm(input: Partial<InventarioVm>) {
+    return this.request<InventarioVm>("/inventario-vm", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  }
+
+  updateInventarioVm(id: number, input: Partial<InventarioVm>) {
+    return this.request<InventarioVm>(`/inventario-vm/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(input),
+    });
+  }
+
+  deleteInventarioVm(id: number) {
+    return this.request<void>(`/inventario-vm/${id}`, {
+      method: "DELETE",
+    });
+  }
+
+  getAplicacoesPorVm(vmName: string) {
+    return this.request<InfraAplicacaoRelacionada[]>(
+      `/inventario-vm/${encodeURIComponent(vmName)}/aplicacoes`,
+    );
   }
 }
 
