@@ -23,7 +23,9 @@ const emptyCounts: InfraEnvironmentCounts = {
 
 export function useProjectRegisteredInfra(project: InfraProjectLike) {
   const [aplicacoes, setAplicacoes] = useState<InfraAplicacao[]>([]);
-  const [vhostInformacoes, setVhostInformacoes] = useState<InfraVhostInfo[]>([]);
+  const [vhostInformacoes, setVhostInformacoes] = useState<InfraVhostInfo[]>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -67,7 +69,9 @@ export function useProjectRegisteredInfra(project: InfraProjectLike) {
   const environmentCounts = useMemo(
     () =>
       vhosts.reduce<InfraEnvironmentCounts>((counts, vhost) => {
-        const environment = getEnvironmentFromLogicalNetwork(vhost.logicalNetwork);
+        const environment = getEnvironmentFromLogicalNetwork(
+          vhost.logicalNetwork,
+        );
         return {
           ...counts,
           [environment]: counts[environment] + 1,

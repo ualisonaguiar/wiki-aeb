@@ -40,7 +40,7 @@ export default function InventarioVmPanel() {
     if (!term) return vms;
 
     return vms.filter((vm) =>
-      [vm.vm, vm.hospedeiro, vm.nuvem, vm.so, vm.descricao]
+      [vm.vm, vm.hospedeiro, vm.nuvem, vm.so, vm.descricao, vm.ipv4, vm.ipv6]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(term)),
     );
@@ -88,7 +88,7 @@ export default function InventarioVmPanel() {
             type="text"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Buscar host..."
+            placeholder="Buscar host ou IP..."
             className="w-full rounded-md border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
           />
         </div>

@@ -11,7 +11,7 @@ import Dashboard from "./components/Dashboard";
 import ProjectDetail from "./components/Projeto/ProjectDetail";
 import InfrastructurePanel from "./components/Infra/InfrastructurePanel";
 import InventarioVmPanel from "./components/Infra/InventarioVmPanel";
-import AdminPanel from "./components/Aplicacao/AdminPanel";
+import { AplicacaoPage } from "./components/Aplicacao/AplicacaoPage";
 import { PROJECTS } from "./data/projects";
 import { projetoService } from "./services/projeto.service";
 import { LoginPage } from "./pages/LoginPage";
@@ -86,8 +86,8 @@ function AppLayout() {
   const renderContent = () => {
     if (location.pathname === "/infra") return <InfrastructurePanel />;
     if (location.pathname === "/inventario") return <InventarioVmPanel />;
-    if (location.pathname === "/admin") return <AdminPanel />;
-    if (location.pathname === "/aplicacao") return <AdminPanel />;
+    if (location.pathname === "/admin") return <AplicacaoPage />;
+    if (location.pathname === "/aplicacao") return <AplicacaoPage />;
     if (location.pathname.startsWith("/projects/")) {
       return selectedProject ? (
         <ProjectDetail project={selectedProject} />
